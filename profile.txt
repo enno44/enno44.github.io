@@ -4,24 +4,24 @@
 # Lines starting with # are comments and are ignored.
 # ============================================================
 
-name=Prof. Pin Luarn
+name=Enno Eickhoff
 
-title1=Top 2% Scientist Worldwide (2020-2026)
+title1= Student @HsPF
 
-title2=2024 National Teaching Award Laureate
+title2=curious about new Frontiers of AI
 
-expertise=Internet Marketing, AI Applications, Agentic AI
+expertise=Market & Data Analytics
 
-education=Ph.D. in Industrial Engineering, University of Wisconsin-Madison, USA
+education= Master Marketing Intelligence
 
-email=luarn@mail.ntust.edu.tw
-linkedin=https://pse.is/8nn88y
+email=eickhofe@hs-pforzheim.de
+linkedin=https://www.linkedin.com/in/enno-eickhoff-387b35268/
 
-about1=Prof. Luarn earned his B.S. in Industrial Engineering from Tunghai University,
-about2=and his M.S. and Ph.D. in Industrial Engineering from the University of Wisconsin-Madison.
-about3=Named among the world's top 2% scientists by Stanford University & Elsevier for seven consecutive years (2020-2026).
-about4=Recipient of the 2024 Presidential National Teaching Award, Taiwan
+about1=I completed my Bachelor’s degree in Business Psychology at Harz University of Applied Sciences in August 2025,
+about2=Since then I have been studying for a Master’s degree in Marketing Intelligence at Pforzheim University, alongside a current internship @Lidl.
+about3=I’m a gym regular and play football — that’s my counterbalance to all the screen time.
+about4=Coffee is a non-negotiable part of my morning.
 
-phone=+886-2-2737-6754
+phone=+555 555 55555
 
-location=T2-409, National Taiwan University of Science and Technology, No. 43, Sec. 4, Keelung Rd., Taipei, Taiwan
+location=Hochschule Pforzheim, Tiefenbronner Str. 65, 75175 Pforzheim
