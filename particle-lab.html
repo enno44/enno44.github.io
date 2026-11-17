@@ -392,13 +392,11 @@ function handleHands(res) {
   for (let i = 0; i < res.landmarks.length; i++) {
     hands.push({
       lm: res.landmarks[i],
-      side: res.handedness[i]?.[0]?.categoryName || "Right",     // camera-mirrored -> matches the user's hand in selfie view
+      side: res.handedness[i]?.[0]?.categoryName || "Right",     // matches the user's real hand (verified with webcam)
       gesture: res.gestures[i]?.[0]?.categoryName || "None",
       score: res.gestures[i]?.[0]?.score || 0,
     });
   }
-  // MediaPipe labels assume a mirrored image; our input is not mirrored, so swap
-  hands.forEach(h => (h.side = h.side === "Left" ? "Right" : "Left"));
   const right = hands.find(h => h.side === "Right"), left = hands.find(h => h.side === "Left");
   const main = right || left;
   setChip("rh", right ? `${right.gesture.replace("_", " ")} ${Math.round(right.score * 100)}%` : "");
@@ -463,7 +461,7 @@ function drawOverlay(res) {
   ov.width = ov.clientWidth * DPR; ov.height = ov.clientHeight * DPR;
   const w = ov.width, h = ov.height; octx.clearRect(0, 0, w, h);
   res.landmarks.forEach((lm, i) => {
-    const side = res.handedness[i]?.[0]?.categoryName === "Left" ? "Right" : "Left";
+    const side = res.handedness[i]?.[0]?.categoryName === "Left" ? "Left" : "Right";
     const col = side === "Right" ? "#5ef2d6" : "#ff7ad9";
     octx.strokeStyle = col; octx.lineWidth = 2.5 * DPR; octx.shadowColor = col; octx.shadowBlur = 8;
     for (const [a, b] of HAND_LINKS) { octx.beginPath(); octx.moveTo(lm[a].x * w, lm[a].y * h); octx.lineTo(lm[b].x * w, lm[b].y * h); octx.stroke(); }
