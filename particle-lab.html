@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Particle Lab | Enno Eickhoff | MediaPipe Extra Credit</title>
+<meta name="description" content="Control a 3D particle universe with your hands - MediaPipe Gesture Recognizer in the browser.">
+<style>
+  :root {
+    --bg: #05060d;
+    --panel: rgba(14, 18, 34, 0.72);
+    --line: rgba(120, 160, 255, 0.18);
+    --text: #e8ecff;
+    --muted: #8a93b8;
+    --accent: #5ef2d6;
+    --accent2: #8f7bff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  canvas#stage { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+
+  .glass { background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 10px 40px rgba(0,0,0,.45); }
+
+  header { position: fixed; top: 22px; left: 50%; transform: translateX(-50%); text-align: center;
+    pointer-events: none; z-index: 5; }
+  header h1 { font-size: clamp(22px, 3.2vw, 44px); font-weight: 800; letter-spacing: .14em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), #ff7ad9, var(--accent));
+    background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 8s linear infinite; text-transform: uppercase; }
+  header p { margin-top: 6px; color: var(--muted); font-size: 13px; letter-spacing: .28em; text-transform: uppercase; }
+  @keyframes shine { to { background-position: 300% 0; } }
+
+  #hud { position: fixed; left: 22px; bottom: 22px; width: 300px; padding: 18px 20px; z-index: 5; }
+  #clock { font-size: 30px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  #date { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .row { display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; margin: 7px 0; }
+  .row b { font-weight: 600; }
+  .bar { height: 6px; background: rgba(255,255,255,.08); border-radius: 6px; overflow: hidden; margin: 4px 0 10px; }
+  .bar > i { display: block; height: 100%; width: 0%; border-radius: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .15s; }
+  .chip { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600;
+    background: rgba(94,242,214,.12); color: var(--accent); border: 1px solid rgba(94,242,214,.3); }
+  .chip.off { background: rgba(255,255,255,.05); color: var(--muted); border-color: rgba(255,255,255,.1); }
+  #swatch { display: flex; gap: 4px; }
+  #swatch span { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+
+  #guide { position: fixed; right: 22px; top: 22px; width: 270px; padding: 16px 18px; z-index: 5; font-size: 13px; }
+  #guide h3 { font-size: 12px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+  #guide li { list-style: none; display: grid; grid-template-columns: 30px 1fr; align-items: center; margin: 7px 0;
+    padding: 4px 6px; border-radius: 10px; transition: background .2s, transform .2s; }
+  #guide li.active { background: rgba(94,242,214,.14); transform: translateX(-4px); }
+  #guide li span:first-child { font-size: 19px; }
+  #guide .keys { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.6; }
+  kbd { font-family: inherit; font-size: 11px; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--text); }
+
+  #cam { position: fixed; right: 22px; bottom: 22px; width: 300px; aspect-ratio: 4/3; overflow: hidden; z-index: 5;
+    border-radius: 18px; border: 1px solid rgba(94,242,214,.45); box-shadow: 0 0 30px rgba(94,242,214,.18); }
+  #cam video, #cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  #cam .tag { position: absolute; left: 10px; top: 8px; font-size: 11px; letter-spacing: .15em; color: var(--accent);
+    text-transform: uppercase; text-shadow: 0 0 8px #000; }
+
+  #toast { position: fixed; left: 50%; top: 110px; transform: translateX(-50%) translateY(-10px); opacity: 0; z-index: 8;
+    padding: 10px 22px; font-size: 15px; font-weight: 600; transition: all .3s; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 9; transition: opacity .5s; }
+  #countdown { position: fixed; inset: 0; display: grid; place-items: center; font-size: 160px; font-weight: 800;
+    color: var(--accent); text-shadow: 0 0 40px var(--accent); pointer-events: none; z-index: 9; opacity: 0; }
+
+  #intro { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+    background: radial-gradient(ellipse at center, rgba(20,26,60,.85), rgba(3,4,10,.97)); transition: opacity .6s; }
+  #intro.hide { opacity: 0; pointer-events: none; }
+  #intro .card { width: min(560px, 92vw); padding: 34px 36px; text-align: center; }
+  #intro h2 { font-size: 30px; margin-bottom: 8px; }
+  #intro p { color: var(--muted); line-height: 1.6; font-size: 14.5px; }
+  #intro .gest { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 22px 0; font-size: 12.5px; color: var(--text); }
+  #intro .gest div { padding: 10px 6px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+  #intro .gest b { display: block; font-size: 24px; margin-bottom: 4px; }
+  button#start { margin-top: 6px; padding: 14px 34px; font-size: 16px; font-weight: 700; color: #04121a; border: 0; cursor: pointer;
+    border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 0 30px rgba(94,242,214,.4);
+    transition: transform .2s; }
+  button#start:hover { transform: scale(1.05); }
+  button#start:disabled { opacity: .6; cursor: wait; transform: none; }
+  #status { margin-top: 14px; font-size: 13px; color: var(--muted); min-height: 18px; }
+  .progress { height: 4px; border-radius: 4px; background: rgba(255,255,255,.08); margin-top: 10px; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s; }
+  a.mouse { color: var(--muted); font-size: 12.5px; display: inline-block; margin-top: 12px; cursor: pointer; text-decoration: underline; }
+
+  footer { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); color: #4c5375; font-size: 11px;
+    letter-spacing: .12em; z-index: 4; white-space: nowrap; }
+  @media (max-width: 900px) { #guide { display: none; } #hud { width: 230px; } #cam { width: 200px; } }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<header>
+  <h1>Particle Lab</h1>
+  <p id="subtitle">Enno Eickhoff &middot; MediaPipe Gesture Studio</p>
+</header>
+
+<aside id="hud" class="glass">
+  <div id="clock">--:--:--</div>
+  <div id="date">-</div>
+  <div class="row"><span>Right hand</span><span id="rh" class="chip off">not detected</span></div>
+  <div class="row"><span>Left hand</span><span id="lh" class="chip off">not detected</span></div>
+  <div class="row"><span>Openness</span><b id="openTxt">0%</b></div>
+  <div class="bar"><i id="openBar"></i></div>
+  <div class="row"><span>Energy</span><b id="energyTxt">0%</b></div>
+  <div class="bar"><i id="energyBar"></i></div>
+  <div class="row"><span>Shape</span><b id="shapeTxt">-</b></div>
+  <div class="row"><span>Palette</span><span id="swatch"></span></div>
+  <div class="row"><span>Particles &middot; FPS</span><b id="fpsTxt">-</b></div>
+</aside>
+
+<aside id="guide" class="glass">
+  <h3>Gesture controls</h3>
+  <ul>
+    <li data-g="move"><span>&#9995;</span><span>Move hand &rarr; rotate the 3D shape</span></li>
+    <li data-g="Closed_Fist"><span>&#9994;</span><span>Fist &rarr; charge energy, open &rarr; next shape</span></li>
+    <li data-g="pinch"><span>&#129295;</span><span>Pinch &rarr; zoom in / out</span></li>
+    <li data-g="Pointing_Up"><span>&#9757;&#65039;</span><span>Point &rarr; paint with light</span></li>
+    <li data-g="Victory"><span>&#9996;&#65039;</span><span>Victory &rarr; next color palette</span></li>
+    <li data-g="Thumb_Up"><span>&#128077;</span><span>Hold thumb up &rarr; snapshot</span></li>
+    <li data-g="two"><span>&#128080;</span><span>Two open hands &rarr; supernova</span></li>
+  </ul>
+  <div class="keys"><kbd>Space</kbd> shape &nbsp;<kbd>C</kbd> colors &nbsp;<kbd>B</kbd> burst &nbsp;<kbd>S</kbd> snapshot<br>
+  No camera? Move the mouse, scroll to zoom.</div>
+</aside>
+
+<div id="cam"><video id="video" playsinline muted></video><canvas id="overlay"></canvas><span class="tag">Live tracking</span></div>
+<div id="toast" class="glass"></div>
+<div id="flash"></div>
+<div id="countdown"></div>
+<footer>Built with MediaPipe Tasks Vision &middot; Pforzheim University &middot; MMI5194 &middot; WS 26/27</footer>
+
+<section id="intro">
+  <div class="card glass">
+    <h2>Welcome to the Particle Lab</h2>
+    <p>Six thousand particles, one camera, your hands. Everything runs locally in your browser &mdash;
+       no video ever leaves your computer.</p>
+    <div class="gest">
+      <div><b>&#9994;&rarr;&#9995;</b>new shape</div>
+      <div><b>&#129295;</b>zoom</div>
+      <div><b>&#9757;&#65039;</b>light painting</div>
+      <div><b>&#9996;&#65039;</b>colors</div>
+      <div><b>&#128077;</b>snapshot</div>
+      <div><b>&#128080;</b>supernova</div>
+    </div>
+    <button id="start">Start camera</button>
+    <div class="progress"><i id="loadBar"></i></div>
+    <div id="status">Allow camera access when your browser asks.</div>
+    <a class="mouse" id="mouseMode">Continue without camera (mouse mode)</a>
+  </div>
+</section>
+
+<script type="module">
+import { FilesetResolver, GestureRecognizer }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+// ---------------------------------------------------------------- config
+const STUDENT_ID = "";                 // optional: put your student ID here, e.g. "M12345678"
+const N = 6000;                        // number of particles
+const PALETTES = [
+  { name: "Aurora",  c: ["#5ef2d6", "#3fa9ff", "#8f7bff", "#c6fff4", "#2de0a7"] },
+  { name: "Sunset",  c: ["#ff7a59", "#ffb347", "#ff4f8b", "#ffe29a", "#c03fff"] },
+  { name: "Gold",    c: ["#ffd76a", "#ffb000", "#fff3c4", "#ff8c1a", "#e0a100"] },
+  { name: "Neon",    c: ["#ff2bd6", "#00f0ff", "#b6ff00", "#7a5cff", "#ffffff"] },
+  { name: "Ocean",   c: ["#00c2ff", "#0066ff", "#7df9ff", "#00ffc8", "#d8f6ff"] },
+  { name: "Fire",    c: ["#ff3b1f", "#ff8a00", "#ffd000", "#ff006a", "#fff1b8"] },
+];
+if (STUDENT_ID) document.getElementById("subtitle").textContent = `${STUDENT_ID} · Enno Eickhoff · MediaPipe Gesture Studio`;
+
+// ---------------------------------------------------------------- shapes (3D point clouds)
+const rnd = (a = 1) => (Math.random() * 2 - 1) * a;
+function textPoints(str, n) {
+  const c = document.createElement("canvas"), W = 900, H = 260;
+  c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#fff"; g.font = "900 200px Segoe UI, Arial, sans-serif";
+  g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(str, W / 2, H / 2 + 10);
+  const d = g.getImageData(0, 0, W, H).data, pts = [];
+  for (let y = 0; y < H; y += 3) for (let x = 0; x < W; x += 3) if (d[(y * W + x) * 4 + 3] > 128) pts.push([x, y]);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const p = pts[(Math.random() * pts.length) | 0];
+    out.push([(p[0] - W / 2) / 260 + rnd(0.004), (p[1] - H / 2) / 260 + rnd(0.004), rnd(0.05)]);
+  }
+  return out;
+}
+const SHAPES = [
+  { name: "Heart", gen: () => { const t = Math.random() * Math.PI * 2, s = Math.pow(Math.random(), 0.35);
+      const x = 16 * Math.sin(t) ** 3, y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+      return [x / 17 * s, -y / 17 * s, rnd(0.35) * (1 - s * 0.6)]; } },
+  { name: "Galaxy", gen: () => { const arm = (Math.random() * 3) | 0, r = Math.pow(Math.random(), 0.7) * 1.4;
+      const a = r * 3.2 + arm * (Math.PI * 2 / 3) + rnd(0.35) / (r + 0.3);
+      return [Math.cos(a) * r, rnd(0.06) * (1.5 - r), Math.sin(a) * r]; } },
+  { name: "Saturn", gen: () => { if (Math.random() < 0.45) { const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, r = 0.55;
+        return [r * Math.sqrt(1 - u * u) * Math.cos(th), r * u, r * Math.sqrt(1 - u * u) * Math.sin(th)]; }
+      const a = Math.random() * Math.PI * 2, r = 0.85 + Math.random() * 0.5;
+      return [Math.cos(a) * r, rnd(0.02) + Math.cos(a) * r * 0.25, Math.sin(a) * r]; } },
+  { name: "DNA Helix", gen: () => { const t = rnd(1), a = t * Math.PI * 4, s = Math.random() < 0.5 ? 0 : Math.PI;
+      if (Math.random() < 0.18) { const k = Math.random(); return [Math.cos(a) * 0.45 * (1 - 2 * k), t * 1.3, Math.sin(a) * 0.45 * (1 - 2 * k)]; }
+      return [Math.cos(a + s) * 0.45 + rnd(0.03), t * 1.3, Math.sin(a + s) * 0.45 + rnd(0.03)]; } },
+  { name: "Star", gen: () => { const k = (Math.random() * 10) | 0, a1 = -Math.PI / 2 + k * Math.PI / 5, a2 = a1 + Math.PI / 5;
+      const r1 = k % 2 ? 0.45 : 1.15, r2 = k % 2 ? 1.15 : 0.45, f = Math.random(), m = Math.sqrt(Math.random());
+      const x = (Math.cos(a1) * r1 * (1 - f) + Math.cos(a2) * r2 * f) * m, y = (Math.sin(a1) * r1 * (1 - f) + Math.sin(a2) * r2 * f) * m;
+      return [x, y, rnd(0.25) * (1 - m)]; } },
+  { name: "Torus Knot", gen: () => { const t = Math.random() * Math.PI * 2, p = 2, q = 3, r = 0.55 + 0.25 * Math.cos(q * t);
+      return [r * Math.cos(p * t) + rnd(0.05), r * Math.sin(p * t) + rnd(0.05), 0.35 * Math.sin(q * t) + rnd(0.05)]; } },
+  { name: "Sphere", gen: () => { const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, r = 0.95;
+      return [r * Math.sqrt(1 - u * u) * Math.cos(th), r * u, r * Math.sqrt(1 - u * u) * Math.sin(th)]; } },
+  { name: "\"ENNO\"", text: "ENNO" },
+  { name: "\"HS PF\"", text: "HS PF" },
+];
+const shapeCache = {};
+function targetsFor(i) {
+  if (!shapeCache[i]) {
+    const s = SHAPES[i];
+    shapeCache[i] = s.text ? textPoints(s.text, N) : Array.from({ length: N }, s.gen);
+  }
+  return shapeCache[i];
+}
+
+// ---------------------------------------------------------------- particles
+const px = new Float32Array(N), py = new Float32Array(N), pz = new Float32Array(N);
+const vx = new Float32Array(N), vy = new Float32Array(N), vz = new Float32Array(N);
+const tone = new Uint8Array(N), seed = new Float32Array(N);
+for (let i = 0; i < N; i++) { px[i] = rnd(3); py[i] = rnd(3); pz[i] = rnd(3); tone[i] = (Math.random() * 5) | 0; seed[i] = Math.random() * 1000; }
+
+let shapeIdx = 0, paletteIdx = 0, targets = targetsFor(0);
+let sprites = [];
+function buildSprites() {
+  sprites = PALETTES[paletteIdx].c.map(col => {
+    const s = document.createElement("canvas"), R = 16; s.width = s.height = R * 2;
+    const g = s.getContext("2d"), grd = g.createRadialGradient(R, R, 0, R, R, R);
+    grd.addColorStop(0, "#ffffffcc"); grd.addColorStop(0.12, col); grd.addColorStop(0.42, col + "40"); grd.addColorStop(1, col + "00");
+    g.fillStyle = grd; g.fillRect(0, 0, R * 2, R * 2); return s;
+  });
+  document.getElementById("swatch").innerHTML = PALETTES[paletteIdx].c.slice(0, 5)
+    .map(c => `<span style="background:${c};color:${c}"></span>`).join("");
+}
+buildSprites();
+
+// light painting trail
+const trail = [];
+
+// ---------------------------------------------------------------- state controlled by hands
+const S = {
+  yaw: 0, pitch: 0.25, tYaw: 0, tPitch: 0.25, autoSpin: true,
+  scale: 1, tScale: 1, spread: 0.15, tSpread: 0.15,
+  energy: 0, offX: 0, offY: 0, tOffX: 0, tOffY: 0,
+  fistArmed: false, thumbSince: 0, victoryLatch: false, superLatch: false, pointer: null,
+};
+
+function nextShape(burst = true) {
+  shapeIdx = (shapeIdx + 1) % SHAPES.length; targets = targetsFor(shapeIdx);
+  if (burst) explode(0.06 + S.energy * 0.12);
+  toast(`Shape: ${SHAPES[shapeIdx].name}`);
+}
+function nextPalette() { paletteIdx = (paletteIdx + 1) % PALETTES.length; buildSprites(); toast(`Palette: ${PALETTES[paletteIdx].name}`); }
+function explode(power) {
+  for (let i = 0; i < N; i++) {
+    const l = Math.hypot(px[i], py[i], pz[i]) + 0.05;
+    vx[i] += (px[i] / l) * power * (0.5 + Math.random()); vy[i] += (py[i] / l) * power * (0.5 + Math.random());
+    vz[i] += (pz[i] / l) * power * (0.5 + Math.random());
+  }
+}
+
+// ---------------------------------------------------------------- canvas + render loop
+const cv = document.getElementById("stage"), ctx = cv.getContext("2d");
+let W = 0, H = 0, DPR = 1;
+function resize() { DPR = Math.min(window.devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0); }
+addEventListener("resize", resize); resize();
+
+let last = performance.now(), fps = 60, t0 = performance.now();
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now; fps = fps * 0.92 + (1 / Math.max(dt, 1e-3)) * 0.08;
+  const time = (now - t0) / 1000;
+
+  // ease controls
+  if (S.autoSpin) S.tYaw += dt * 0.25;
+  S.yaw += (S.tYaw - S.yaw) * 0.08; S.pitch += (S.tPitch - S.pitch) * 0.08;
+  S.scale += (S.tScale - S.scale) * 0.1; S.spread += (S.tSpread - S.spread) * 0.08;
+  S.offX += (S.tOffX - S.offX) * 0.08; S.offY += (S.tOffY - S.offY) * 0.08;
+  S.energy *= 0.995;
+
+  // fade previous frame -> motion trails
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = "rgba(5,6,13,0.42)"; ctx.fillRect(0, 0, W, H);
+
+  const cy = Math.cos(S.yaw), sy = Math.sin(S.yaw), cp = Math.cos(S.pitch), sp = Math.sin(S.pitch);
+  const unit = Math.min(W, H) * 0.33 * S.scale, cx0 = W / 2 + S.offX * W * 0.25, cy0 = H / 2 + S.offY * H * 0.2;
+  const charge = S.energy, k = 0.045, damp = 0.86;
+  const jitter = S.spread * 0.02 + charge * 0.004;
+
+  // pointer repulsion (index fingertip / mouse) in screen space
+  const P = S.pointer, isText = !!SHAPES[shapeIdx].text;
+
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < N; i++) {
+    const tg = targets[i];
+    // fist charge pulls everything into a dense, trembling core
+    let tx = tg[0] * (1 - charge * 0.75), ty = tg[1] * (1 - charge * 0.75), tz = tg[2] * (1 - charge * 0.75);
+    // open palm spread breathes the shape outwards with noise
+    const n = Math.sin(time * 1.3 + seed[i]) * S.spread * (isText ? 0.35 : 1);
+    tx += tx * n * 0.6; ty += ty * n * 0.6; tz += tz * n * 0.6;
+    vx[i] = (vx[i] + (tx - px[i]) * k + rnd(jitter)) * damp;
+    vy[i] = (vy[i] + (ty - py[i]) * k + rnd(jitter)) * damp;
+    vz[i] = (vz[i] + (tz - pz[i]) * k + rnd(jitter)) * damp;
+    px[i] += vx[i]; py[i] += vy[i]; pz[i] += vz[i];
+
+    // rotate + project
+    const x1 = px[i] * cy - pz[i] * sy, z1 = px[i] * sy + pz[i] * cy;
+    const y2 = py[i] * cp - z1 * sp, z2 = py[i] * sp + z1 * cp;
+    const persp = 2.6 / (2.6 + z2);
+    let X = cx0 + x1 * unit * persp, Y = cy0 + y2 * unit * persp;
+
+    if (P) {
+      const dx = X - P.x, dy = Y - P.y, d2 = dx * dx + dy * dy, R = 110;
+      if (d2 < R * R) { const f = (1 - Math.sqrt(d2) / R) * 0.035; vx[i] += dx / unit * f * 3; vy[i] += dy / unit * f * 3; }
+    }
+    const size = (SHAPES[shapeIdx].text ? 1.15 : 1.5) * (1 + charge * 1.2) * persp * (0.7 + (i % 7) * 0.08);
+    const spr = sprites[tone[i]];
+    ctx.globalAlpha = Math.min(1, 0.26 + persp * 0.3);
+    ctx.drawImage(spr, X - size * 1.6, Y - size * 1.6, size * 3.2, size * 3.2);
+  }
+  ctx.globalAlpha = 1;
+
+  // light painting
+  for (let j = trail.length - 1; j >= 0; j--) {
+    const p = trail[j]; p.life -= dt * 0.45;
+    if (p.life <= 0) { trail.splice(j, 1); continue; }
+    p.x += p.vx; p.y += p.vy; p.vy += 0.02;
+    const s = 10 * p.life; ctx.globalAlpha = p.life;
+    ctx.drawImage(sprites[p.t], p.x - s, p.y - s, s * 2, s * 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+
+  hud(now);
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- HUD
+const $ = id => document.getElementById(id);
+function hud() {
+  const d = new Date();
+  $("clock").textContent = d.toLocaleTimeString("de-DE");
+  $("date").textContent = d.toLocaleDateString("en-CA") + " " + d.toLocaleDateString("en-US", { weekday: "short" });
+  $("shapeTxt").textContent = SHAPES[shapeIdx].name;
+  $("energyTxt").textContent = Math.round(S.energy * 100) + "%"; $("energyBar").style.width = S.energy * 100 + "%";
+  $("fpsTxt").textContent = `${N} · ${Math.round(fps)}`;
+}
+let toastTimer;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1600); }
+function setChip(id, txt) { const e = $(id); e.textContent = txt || "not detected"; e.classList.toggle("off", !txt); }
+function highlight(keys) { document.querySelectorAll("#guide li").forEach(li => li.classList.toggle("active", keys.includes(li.dataset.g))); }
+
+// ---------------------------------------------------------------- snapshot
+let snapping = false;
+async function snapshot() {
+  if (snapping) return; snapping = true;
+  const cd = $("countdown");
+  for (const n of ["3", "2", "1"]) { cd.textContent = n; cd.style.opacity = 1; await new Promise(r => setTimeout(r, 650)); }
+  cd.style.opacity = 0;
+  const out = document.createElement("canvas"); out.width = cv.width; out.height = cv.height;
+  const g = out.getContext("2d"); g.drawImage(cv, 0, 0);
+  g.font = `${18 * DPR}px Segoe UI, sans-serif`; g.fillStyle = "rgba(232,236,255,.8)";
+  g.fillText(`Particle Lab · ${SHAPES[shapeIdx].name} · ${PALETTES[paletteIdx].name} · enno44.github.io`, 24 * DPR, out.height - 24 * DPR);
+  const a = document.createElement("a"); a.download = `particle-lab-${Date.now()}.png`; a.href = out.toDataURL("image/png"); a.click();
+  $("flash").style.opacity = 0.85; setTimeout(() => ($("flash").style.opacity = 0), 120);
+  toast("Snapshot saved to Downloads"); setTimeout(() => (snapping = false), 1500);
+}
+
+// ---------------------------------------------------------------- hand logic
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function openness(lm) {
+  // fingertip distance to wrist relative to palm size -> 0 (fist) .. 1 (open)
+  const palm = dist(lm[0], lm[9]) + 1e-6;
+  const tips = [8, 12, 16, 20].map(i => dist(lm[i], lm[0]) / palm);
+  const avg = tips.reduce((a, b) => a + b, 0) / 4;
+  return Math.min(1, Math.max(0, (avg - 0.9) / 1.1));
+}
+
+function handleHands(res) {
+  const hands = [];
+  for (let i = 0; i < res.landmarks.length; i++) {
+    hands.push({
+      lm: res.landmarks[i],
+      side: res.handedness[i]?.[0]?.categoryName || "Right",     // camera-mirrored -> matches the user's hand in selfie view
+      gesture: res.gestures[i]?.[0]?.categoryName || "None",
+      score: res.gestures[i]?.[0]?.score || 0,
+    });
+  }
+  // MediaPipe labels assume a mirrored image; our input is not mirrored, so swap
+  hands.forEach(h => (h.side = h.side === "Left" ? "Right" : "Left"));
+  const right = hands.find(h => h.side === "Right"), left = hands.find(h => h.side === "Left");
+  const main = right || left;
+  setChip("rh", right ? `${right.gesture.replace("_", " ")} ${Math.round(right.score * 100)}%` : "");
+  setChip("lh", left ? `${left.gesture.replace("_", " ")} ${Math.round(left.score * 100)}%` : "");
+  const active = [];
+
+  if (!main) { S.autoSpin = true; S.pointer = null; S.tSpread = 0.15; $("openTxt").textContent = "0%"; $("openBar").style.width = "0%"; highlight([]); return; }
+  S.autoSpin = false; active.push("move");
+
+  const lm = main.lm, open = openness(lm);
+  $("openTxt").textContent = Math.round(open * 100) + "%"; $("openBar").style.width = open * 100 + "%";
+
+  // position -> rotation + slight offset (mirrored x for selfie feeling)
+  const hx = 1 - lm[9].x, hy = lm[9].y;
+  S.tYaw = (hx - 0.5) * Math.PI * 1.6; S.tPitch = (hy - 0.5) * 1.6;
+  S.tOffX = (hx - 0.5) * 0.6; S.tOffY = (hy - 0.5) * 0.5;
+  S.tSpread = 0.05 + open * 0.55;
+
+  // pinch -> zoom
+  const pinch = dist(lm[4], lm[8]) / (dist(lm[0], lm[9]) + 1e-6);
+  if (pinch < 0.35 && main.gesture !== "Closed_Fist") { S.tScale = Math.max(0.45, S.tScale - 0.02); active.push("pinch"); }
+  else if (pinch > 1.1 && open > 0.7) S.tScale = Math.min(1.6, S.tScale + 0.006);
+
+  // fist -> charge, open -> release = next shape
+  if (main.gesture === "Closed_Fist" || open < 0.15) { S.fistArmed = true; S.energy = Math.min(1, S.energy + 0.03); active.push("Closed_Fist"); }
+  else if (S.fistArmed && open > 0.6) { S.fistArmed = false; nextShape(true); S.energy = 0; }
+
+  // pointing -> light painting + repel particles
+  if (main.gesture === "Pointing_Up") {
+    const X = (1 - lm[8].x) * W, Y = lm[8].y * H;
+    S.pointer = { x: X, y: Y }; active.push("Pointing_Up");
+    for (let j = 0; j < 4; j++) trail.push({ x: X + rnd(4), y: Y + rnd(4), vx: rnd(0.6), vy: rnd(0.6), life: 1, t: (Math.random() * 5) | 0 });
+    if (trail.length > 900) trail.splice(0, trail.length - 900);
+  } else S.pointer = null;
+
+  // victory -> palette (latched so it fires once per gesture)
+  const victory = hands.some(h => h.gesture === "Victory");
+  if (victory && !S.victoryLatch) nextPalette();
+  S.victoryLatch = victory; if (victory) active.push("Victory");
+
+  // thumb up held 1s -> snapshot
+  if (main.gesture === "Thumb_Up") { active.push("Thumb_Up"); S.thumbSince ||= performance.now();
+    if (performance.now() - S.thumbSince > 1000) { S.thumbSince = Infinity; snapshot(); } }
+  else S.thumbSince = 0;
+
+  // two open hands -> supernova, distance between hands -> size
+  if (right && left) {
+    const o1 = openness(right.lm), o2 = openness(left.lm);
+    const span = dist(right.lm[9], left.lm[9]);
+    S.tScale = Math.min(1.8, Math.max(0.5, span * 2.2));
+    if (o1 > 0.75 && o2 > 0.75) { active.push("two"); if (!S.superLatch) { explode(0.35); toast("Supernova!"); } S.superLatch = true; }
+    else S.superLatch = false;
+  } else S.superLatch = false;
+
+  highlight(active);
+}
+
+// webcam overlay drawing
+const ov = $("overlay"), octx = ov.getContext("2d");
+const HAND_LINKS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function drawOverlay(res) {
+  ov.width = ov.clientWidth * DPR; ov.height = ov.clientHeight * DPR;
+  const w = ov.width, h = ov.height; octx.clearRect(0, 0, w, h);
+  res.landmarks.forEach((lm, i) => {
+    const side = res.handedness[i]?.[0]?.categoryName === "Left" ? "Right" : "Left";
+    const col = side === "Right" ? "#5ef2d6" : "#ff7ad9";
+    octx.strokeStyle = col; octx.lineWidth = 2.5 * DPR; octx.shadowColor = col; octx.shadowBlur = 8;
+    for (const [a, b] of HAND_LINKS) { octx.beginPath(); octx.moveTo(lm[a].x * w, lm[a].y * h); octx.lineTo(lm[b].x * w, lm[b].y * h); octx.stroke(); }
+    octx.fillStyle = "#fff";
+    for (const p of lm) { octx.beginPath(); octx.arc(p.x * w, p.y * h, 2.6 * DPR, 0, Math.PI * 2); octx.fill(); }
+  });
+  octx.shadowBlur = 0;
+}
+
+// ---------------------------------------------------------------- startup
+let recognizer, video = $("video"), lastVideoTime = -1;
+async function startCamera() {
+  const btn = $("start"); btn.disabled = true;
+  const status = m => ($("status").textContent = m), prog = p => ($("loadBar").style.width = p + "%");
+  try {
+    status("Loading MediaPipe engine..."); prog(15);
+    const camP = navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" }, audio: false });
+    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+    prog(45); status("Downloading gesture model...");
+    const opts = d => ({ baseOptions: { modelAssetPath:
+      "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task", delegate: d },
+      runningMode: "VIDEO", numHands: 2 });
+    try { recognizer = await GestureRecognizer.createFromOptions(vision, opts("GPU")); }
+    catch { recognizer = await GestureRecognizer.createFromOptions(vision, opts("CPU")); }
+    prog(80); status("Starting camera...");
+    video.srcObject = await camP; await video.play();
+    prog(100); status("Ready!");
+    $("intro").classList.add("hide");
+    toast("Show your hand to the camera ✋");
+    detectLoop();
+  } catch (e) {
+    console.error(e); btn.disabled = false;
+    status(e.name === "NotAllowedError" ? "Camera access was blocked - allow it in the address bar and try again."
+                                        : "Could not start: " + (e.message || e));
+  }
+}
+function detectLoop() {
+  if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
+    const res = recognizer.recognizeForVideo(video, performance.now());
+    handleHands(res); drawOverlay(res);
+  }
+  requestAnimationFrame(detectLoop);
+}
+function mouseMode() {
+  $("intro").classList.add("hide"); $("cam").style.display = "none";
+  toast("Mouse mode: move to rotate, scroll to zoom, Space for shapes");
+  addEventListener("mousemove", e => { S.autoSpin = false; S.tYaw = (e.clientX / W - 0.5) * Math.PI * 1.6; S.tPitch = (e.clientY / H - 0.5) * 1.6;
+    S.pointer = e.buttons ? { x: e.clientX, y: e.clientY } : null; });
+  addEventListener("wheel", e => { S.tScale = Math.min(1.8, Math.max(0.45, S.tScale - e.deltaY * 0.001)); });
+}
+$("start").onclick = startCamera;
+$("mouseMode").onclick = mouseMode;
+addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); nextShape(true); }
+  else if (e.key === "c" || e.key === "C") nextPalette();
+  else if (e.key === "b" || e.key === "B") { explode(0.3); toast("Burst!"); }
+  else if (e.key === "s" || e.key === "S") snapshot();
+});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

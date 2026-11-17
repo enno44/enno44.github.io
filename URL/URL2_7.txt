@@ -1,2 +1,2 @@
-Extra Credit Challenge
-https://drluarn.github.io/mediapipeCC.html
+Extra Credit 2.7: Particle Lab - control 6000 particles with your hands
+https://enno44.github.io/particle-lab.html
