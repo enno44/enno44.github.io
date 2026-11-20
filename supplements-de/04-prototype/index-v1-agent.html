@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KLARDOSIS – The right amount. Proven. (Demo prototype)</title>
+<style>
+  :root {
+    --ink: #1d2a2e;
+    --muted: #55656a;
+    --bg: #f7f8f6;
+    --card: #ffffff;
+    --accent: #2f6f62;
+    --accent-dark: #24574d;
+    --line: #dde3e0;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  .demo-banner {
+    background: #fff4d6;
+    color: #6b5310;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 6px 16px;
+  }
+  header.site {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+  }
+  header.site .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px; padding-top: 14px; padding-bottom: 14px;
+  }
+  .logo { font-weight: 800; letter-spacing: 0.12em; font-size: 1.2rem; color: var(--accent-dark); text-decoration: none; }
+  nav a { color: var(--muted); text-decoration: none; margin-left: 18px; font-size: 0.95rem; }
+  nav a:hover { color: var(--accent); }
+
+  .hero { padding: 72px 0 64px; text-align: center; }
+  .slogan { text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.85rem; color: var(--accent); font-weight: 700; margin: 0 0 12px; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; margin: 0 0 20px; }
+  .hero p.sub { max-width: 720px; margin: 0 auto 32px; color: var(--muted); font-size: 1.1rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: center; }
+  .btn {
+    display: inline-block; background: var(--accent); color: #fff; text-decoration: none;
+    padding: 14px 26px; border-radius: 8px; font-weight: 600;
+  }
+  .btn:hover { background: var(--accent-dark); }
+  .link { color: var(--accent-dark); font-weight: 600; }
+
+  section.points { padding: 56px 0; background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  section h2 { text-align: center; font-size: 1.8rem; margin: 0 0 36px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .card {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 26px;
+    scroll-margin-top: 20px;
+  }
+  .card .num {
+    display: inline-flex; width: 34px; height: 34px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 700;
+    align-items: center; justify-content: center; margin-bottom: 12px;
+  }
+  .card h3 { margin: 0 0 10px; font-size: 1.15rem; }
+  .card p { margin: 0; color: var(--muted); }
+
+  section.cta { padding: 64px 0; text-align: center; scroll-margin-top: 20px; }
+  .cta h2 { margin-bottom: 18px; }
+  .cta p { color: var(--muted); max-width: 620px; margin: 18px auto 0; }
+  .alt { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .demo-note { display: block; font-size: 0.8rem; color: #6b5310; margin-top: 6px; }
+
+  footer { background: var(--ink); color: #c9d3d0; padding: 28px 0; font-size: 0.85rem; }
+  footer p { margin: 4px 0; }
+
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    nav a { margin-left: 0; margin-right: 14px; }
+    .hero { padding: 48px 0 40px; }
+    .btn { width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-banner">Demo prototype for teaching purposes – not a live shop. All buttons scroll to sections on this page.</div>
+
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="#top" id="top">KLARDOSIS</a>
+    <nav aria-label="Main">
+      <a href="#why">Why KLARDOSIS</a>
+      <a href="#essentials">Essentials</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <p class="slogan">The right amount. Proven.</p>
+      <h1>More isn't better. The right amount is.</h1>
+      <p class="sub">KLARDOSIS supplements are dosed at or below the maximum levels recommended by Germany's Federal Institute for Risk Assessment (BfR) by design, and every batch's lab certificate is published online. No guesswork, no sweeteners, no exaggerated promises. Just clear dosing you can check yourself.</p>
+      <div class="actions">
+        <!-- Demo anchor: scrolls to selling point 1 (dosing) -->
+        <a class="btn" href="#dosing">Check our dosing</a>
+        <!-- Demo anchor: scrolls to selling point 2 (batch certificates); no real certificate page exists yet -->
+        <div>
+          <a class="link" href="#batch">See a batch certificate</a>
+          <span class="demo-note">Demo: scrolls to card 2 below (no certificate page yet).</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="points" id="why">
+    <div class="wrap">
+      <h2>Why KLARDOSIS</h2>
+      <div class="grid">
+        <article class="card" id="dosing">
+          <span class="num">1</span>
+          <h3>Dosed at or below BfR maximum levels, not beyond them</h3>
+          <p>Recent consumer tests found that half of 28 magnesium products exceeded the BfR recommendation of 250 mg per day. We take the opposite approach: every KLARDOSIS product is formulated at or below the BfR maximum levels from the start. Our magnesium, for example, stays at or below 250 mg per day. Look for our "Dosed within BfR guidance" mark on every pack. It marks our own dosing principle; it is not an approval or certification by the BfR.</p>
+        </article>
+        <article class="card" id="batch">
+          <span class="num">2</span>
+          <h3>Every batch, every result, public</h3>
+          <p>Many people believe supplements are safety-tested before they go on sale. They are not. So we test them ourselves. Every pack carries a batch number and a QR code that links directly to the lab report for that batch, covering heavy metals and contaminants. Scan it, read it, decide for yourself.</p>
+        </article>
+        <article class="card" id="clean">
+          <span class="num">3</span>
+          <h3>Clean formulas with nothing to hide</h3>
+          <p>No sweeteners. Minimal additives. Vegan wherever possible. A small, focused range: magnesium, vitamin D, a cultures-and-botanicals formula and a women's bundle. We don't try to sell you everything; we try to get the essentials right.</p>
+        </article>
+        <article class="card" id="honest">
+          <span class="num">4</span>
+          <h3>Honest words, including "you may not need this"</h3>
+          <p>We only use health claims authorised by the EU, worded the way they were approved. No miracle promises, no disease claims, no influencer hype. And on every product page we tell you plainly who does <em>not</em> need the product. Your trust matters more to us than one extra sale.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta" id="essentials">
+    <div class="wrap">
+      <h2>Know exactly what you're taking.</h2>
+      <!-- Demo anchor: no shop exists yet; scrolls to the product range description in card 3 -->
+      <a class="btn" href="#clean">Find your KLARDOSIS essentials</a>
+      <span class="demo-note">Demo: scrolls to the product range above (no shop connected).</span>
+      <p>Subscribe and get your essentials delivered regularly. Every delivery comes with its own published batch certificate.</p>
+
+      <div class="alt">
+        <p>Not sure what you need? <a class="link" href="#honest">Read our Dose Check guide</a>: plain-language explainers on BfR maximum levels and common supplement myths.</p>
+        <span class="demo-note">Demo: the guide is not written yet; this link scrolls to card 4 above.</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><strong>KLARDOSIS</strong> – The right amount. Proven.</p>
+    <p>Demo prototype. Working brand name; trademark not yet checked. Copy pending legal claims review.</p>
+  </div>
+</footer>
+
+</body>
+</html>
