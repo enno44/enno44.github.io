@@ -4,9 +4,9 @@
 # Lines starting with # are comments and are ignored.
 # ============================================================
 
-name=Enno Eickhoff 335299
+name=Enno Eickhoff
 
-title1= Student @HsPF
+title1= Student @HsPF · Student ID: 335299
 
 title2=curious about new Frontiers of AI
 
