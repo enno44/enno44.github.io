@@ -39,7 +39,7 @@ class ChatBot {
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
-                z-index: 1000;
+                z-index: 1100;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             }
 
@@ -103,8 +103,8 @@ class ChatBot {
                 position: absolute;
                 bottom: 90px;
                 right: 0;
-                width: 420px;
-                height: 600px;
+                width: 380px;
+                height: min(520px, calc(100vh - 130px));
                 background: white;
                 border-radius: 24px;
                 box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
