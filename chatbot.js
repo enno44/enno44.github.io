@@ -46,11 +46,11 @@ class ChatBot {
             .chatbot-toggle {
                 width: 70px;
                 height: 70px;
-                background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+                background: linear-gradient(135deg, #6d5a8c 0%, #3d2f52 100%);
                 border: none;
                 border-radius: 50%;
                 cursor: pointer;
-                box-shadow: 0 8px 25px rgba(59, 130, 246, 0.35);
+                box-shadow: 0 8px 25px rgba(87, 69, 113, 0.35);
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 color: white;
                 font-size: 28px;
@@ -68,8 +68,8 @@ class ChatBot {
 
             .chatbot-toggle:hover {
                 transform: scale(1.12) translateY(-3px);
-                box-shadow: 0 12px 35px rgba(59, 130, 246, 0.45);
-                background: linear-gradient(135deg, #4f95ff 0%, #2563eb 100%);
+                box-shadow: 0 12px 35px rgba(87, 69, 113, 0.45);
+                background: linear-gradient(135deg, #7a6496 0%, #574571 100%);
             }
 
             .chatbot-toggle:active {
@@ -111,7 +111,7 @@ class ChatBot {
                 display: none;
                 flex-direction: column;
                 overflow: hidden;
-                border: 1px solid rgba(226, 232, 240, 0.5);
+                border: 1px solid rgba(236, 228, 234, 0.5);
                 backdrop-filter: blur(10px);
             }
 
@@ -132,7 +132,7 @@ class ChatBot {
             }
 
             .chatbot-header {
-                background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #1e40af 100%);
+                background: linear-gradient(135deg, #574571 0%, #4a3a63 50%, #3d2f52 100%);
                 color: white;
                 padding: 22px;
                 display: flex;
@@ -140,7 +140,7 @@ class ChatBot {
                 align-items: center;
                 position: relative;
                 overflow: hidden;
-                box-shadow: 0 4px 15px rgba(2, 132, 199, 0.2);
+                box-shadow: 0 4px 15px rgba(87, 69, 113, 0.2);
             }
 
             .chatbot-header::before {
@@ -259,7 +259,7 @@ class ChatBot {
                 display: flex;
                 flex-direction: column;
                 gap: 14px;
-                background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+                background: linear-gradient(180deg, #faf7fb 0%, #f1e9ef 100%);
                 position: relative;
             }
 
@@ -272,12 +272,12 @@ class ChatBot {
             }
 
             .chat-messages::-webkit-scrollbar-thumb {
-                background: #94c5f5;
+                background: #c9bdd8;
                 border-radius: 3px;
             }
 
             .chat-messages::-webkit-scrollbar-thumb:hover {
-                background: #60a5fa;
+                background: #9a89b3;
             }
 
             .chat-messages::before {
@@ -288,9 +288,9 @@ class ChatBot {
                 right: 0;
                 bottom: 0;
                 background-image: 
-                    radial-gradient(circle at 20% 20%, rgba(3, 105, 161, 0.08) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-                    radial-gradient(circle at 40% 60%, rgba(96, 165, 250, 0.06) 0%, transparent 50%);
+                    radial-gradient(circle at 20% 20%, rgba(202, 164, 164, 0.08) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(87, 69, 113, 0.08) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 60%, rgba(154, 137, 179, 0.06) 0%, transparent 50%);
                 pointer-events: none;
             }
 
@@ -318,11 +318,11 @@ class ChatBot {
             }
 
             .message.user {
-                background: linear-gradient(135deg, #3b82f6, #2563eb);
+                background: linear-gradient(135deg, #6d5a8c, #574571);
                 color: white;
                 align-self: flex-end;
                 border-bottom-right-radius: 6px;
-                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+                box-shadow: 0 4px 12px rgba(61, 47, 82, 0.3);
                 font-weight: 500;
             }
 
@@ -339,11 +339,11 @@ class ChatBot {
 
             .message.ai {
                 background: white;
-                color: #1e293b;
+                color: #2c2733;
                 align-self: flex-start;
                 border-bottom-left-radius: 6px;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                border-left: 3px solid #0284c7;
+                border-left: 3px solid #574571;
             }
 
             .message.error-message {
@@ -393,7 +393,7 @@ class ChatBot {
                 background: white;
                 border-radius: 18px;
                 border-bottom-left-radius: 6px;
-                border-left: 3px solid #0284c7;
+                border-left: 3px solid #574571;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
                 width: fit-content;
             }
@@ -401,7 +401,7 @@ class ChatBot {
             .typing-dot {
                 width: 8px;
                 height: 8px;
-                background: #60a5fa;
+                background: #9a89b3;
                 border-radius: 50%;
                 animation: typing 1.4s infinite;
             }
@@ -428,7 +428,7 @@ class ChatBot {
             .chat-input {
                 padding: 16px;
                 background: white;
-                border-top: 1px solid #e2e8f0;
+                border-top: 1px solid #ece4ea;
                 display: flex;
                 gap: 10px;
                 align-items: flex-end;
@@ -437,7 +437,7 @@ class ChatBot {
 
             .input-field {
                 flex: 1;
-                border: 2px solid #e2e8f0;
+                border: 2px solid #ece4ea;
                 border-radius: 12px;
                 padding: 11px 14px;
                 font-size: 14px;
@@ -446,22 +446,22 @@ class ChatBot {
                 transition: all 0.3s ease;
                 max-height: 100px;
                 line-height: 1.4;
-                color: #1e293b;
+                color: #2c2733;
             }
 
             .input-field:focus {
                 outline: none;
-                border-color: #0284c7;
-                box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
-                background: #f8fafc;
+                border-color: #574571;
+                box-shadow: 0 0 0 3px rgba(87, 69, 113, 0.1);
+                background: #fbf8fa;
             }
 
             .input-field::placeholder {
-                color: #94a3b8;
+                color: #9d93a5;
             }
 
             .send-button {
-                background: linear-gradient(135deg, #3b82f6 0%, #0284c7 100%);
+                background: linear-gradient(135deg, #6d5a8c 0%, #574571 100%);
                 color: white;
                 border: none;
                 border-radius: 12px;
@@ -470,7 +470,7 @@ class ChatBot {
                 font-weight: 600;
                 cursor: pointer;
                 transition: all 0.3s ease;
-                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+                box-shadow: 0 4px 12px rgba(87, 69, 113, 0.3);
                 display: flex;
                 align-items: center;
                 gap: 6px;
@@ -480,8 +480,8 @@ class ChatBot {
 
             .send-button:hover:not(:disabled) {
                 transform: translateY(-2px);
-                box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-                background: linear-gradient(135deg, #4f95ff 0%, #0369a1 100%);
+                box-shadow: 0 6px 16px rgba(87, 69, 113, 0.4);
+                background: linear-gradient(135deg, #7a6496 0%, #4a3a63 100%);
             }
 
             .send-button:active:not(:disabled) {
