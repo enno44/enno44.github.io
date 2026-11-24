@@ -1,2 +1,2 @@
-Extra Credit 5.9: Broadside at Skull Cove - pirate fleet battle built with Claude (WebGL sea, computer captain)
-https://enno44.github.io/broadside.html
+Extra Credit 5.9: Skull Cove Broadside - cartoon 3D pirate fleet battle built with Claude (three.js toon style, captain's first-person view, mini map, computer captain)
+https://enno44.github.io/skull-cove.html
