@@ -766,7 +766,7 @@
             );
 
             for (const { i, src } of checks) {
-                if (!src) break; // stop at the first gap to preserve ordering
+                if (!src) continue; // skip gaps (e.g. an assignment left out) so later images still show
                 images.push({
                     src: src,
                     index: i,
