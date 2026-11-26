@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The FussballVision story</title>
+<meta name="description" content="What I set out to build, how a team of AI agents built and checked it, what worked, what failed and what I learned.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .prose { max-width: 46em; }
+  .prose p { margin: 0 0 18px; color: #d4dae0; }
+  .agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); counter-reset: a; }
+  .agent { background: var(--bg-2); padding: 24px 22px; position: relative; }
+  .agent .n { font-weight: 800; font-stretch: 70%; font-size: 2.2rem; line-height: 1; color: var(--accent); }
+  .agent h3 { font-weight: 800; font-stretch: 80%; text-transform: uppercase; font-size: 1.3rem; line-height: 1.05; margin: 10px 0 8px; }
+  .agent p { margin: 0; color: var(--muted); font-size: .94rem; }
+  .agent q { display: block; margin-top: 12px; font-size: .9rem; color: var(--ink); font-style: italic; quotes: "“" "”"; }
+  .tag { display: inline-block; margin-top: 14px; font-size: .74rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; padding: 4px 8px; border: 1px solid var(--line-2); color: var(--muted); }
+  .tag.block { border-color: var(--red); color: #ff8a82; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 28px 0 0; font-weight: 700; font-size: .9rem; }
+  .flow span { padding: 8px 12px; border: 1px solid var(--line-2); background: var(--panel); }
+  .flow b { color: var(--accent); }
+  .who { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 18px; margin-top: 36px; }
+  .who div { border: 1px solid var(--line); padding: 22px; background: var(--bg-2); }
+  .who h3 { margin: 0 0 8px; font-weight: 800; font-stretch: 85%; text-transform: uppercase; }
+  .who p { margin: 0; color: var(--muted); font-size: .95rem; }
+  .timeline-v { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--line-2); }
+  .timeline-v li { position: relative; padding: 0 0 34px 28px; }
+  .timeline-v li::before { content: ""; position: absolute; left: -8px; top: 6px; width: 14px; height: 14px; background: var(--accent); }
+  .timeline-v time { font-weight: 800; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .timeline-v h3 { margin: 4px 0 6px; font-weight: 800; font-stretch: 85%; text-transform: uppercase; font-size: 1.25rem; }
+  .timeline-v p { margin: 0; color: var(--muted); max-width: 44em; }
+  .problems { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .problem { background: var(--bg-2); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; }
+  .problem div { padding: 22px; }
+  .problem div + div { border-left: 1px solid var(--line); }
+  .problem h3 { margin: 0 0 6px; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; }
+  .problem .bad h3 { color: #ff8a82; }
+  .problem .good h3 { color: #8fe3a0; }
+  .problem p { margin: 0; color: #d4dae0; }
+  .verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 18px; }
+  .verdict div { border-top: 6px solid var(--accent); background: var(--bg-2); padding: 24px; }
+  .verdict div.miss { border-top-color: var(--red); }
+  .verdict h3 { margin: 0 0 12px; font-weight: 800; font-stretch: 80%; text-transform: uppercase; font-size: 1.5rem; }
+  .verdict ul { margin: 0; padding-left: 18px; color: #d4dae0; }
+  .verdict li { margin-bottom: 8px; }
+  .lessons { counter-reset: l; list-style: none; padding: 0; margin: 0; display: grid; gap: 22px; max-width: 52em; }
+  .lessons li { counter-increment: l; display: grid; grid-template-columns: 56px 1fr; gap: 12px; }
+  .lessons li::before { content: counter(l); font-weight: 800; font-stretch: 70%; font-size: 2.6rem; line-height: .9; color: var(--accent); }
+  .lessons b { display: block; font-weight: 800; font-stretch: 88%; text-transform: uppercase; }
+  .lessons span { color: var(--muted); }
+  @media (max-width: 700px) { .problem { grid-template-columns: 1fr; } .problem div + div { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="#ffd23f" stroke-width="3"/><path d="M16 9l6 4.5-2.3 7h-7.4L10 13.5z" fill="#ffd23f"/></svg>FUSSBALLVISION</a>
+    <nav aria-label="Main"><a href="index.html">Home</a><a href="index.html#demo">Demo</a><a href="story.html" aria-current="page">The story</a><a class="cta" href="try.html">Try it</a></nav>
+  </div>
+</header>
+
+<div class="hero page-hero">
+  <img class="bg" src="img/stadium.jpg" alt="">
+  <div class="wrap">
+    <p class="eyebrow">The story behind the project</p>
+    <h1 class="display">What I tried. What I <em>built</em>. What I learned.</h1>
+    <p class="lead">I wanted my amateur club to get the kind of match analysis that professional teams have. I did not write this alone: a team of AI agents researched, built, audited and reviewed every step, and I steered.</p>
+  </div>
+</div>
+
+<div class="strip" aria-label="Project in numbers">
+  <div><b>6</b><span>agent roles with clear rules</span></div>
+  <div><b>27</b><span>commits in six days</span></div>
+  <div><b>256</b><span>automated tests passing</span></div>
+  <div><b>53</b><span>planning and research documents</span></div>
+</div>
+
+<main class="wrap">
+  <section id="idea">
+    <div class="head">
+      <div><div class="bar"></div><h2 class="display">The idea</h2></div>
+      <p>One camera, no analyst, and a Sunday league match that nobody will ever look at again.</p>
+    </div>
+    <div class="prose">
+      <p>Clubs in the lower leagues increasingly film their games with a single automatic camera such as Veo. The video exists, but nobody has the time to count passes, possession or turnovers by hand.</p>
+      <p>My goal: load a match video, and get the numbers automatically. Every player detected, the two teams separated, the ball followed, and from that possession, passes and turnovers. Locally on my laptop, with no video sent to the cloud, and with honest information about how reliable each number is.</p>
+    </div>
+  </section>
+
+  <section id="agents">
+    <div class="head">
+      <div><div class="bar"></div><h2 class="display">My team of AI agents</h2></div>
+      <p>Instead of asking one chatbot to "build it", I set up a team with fixed roles. Each role has one question to answer, and four of them can stop the work if it is not good enough.</p>
+    </div>
+    <div class="agents">
+      <div class="agent"><div class="n">01</div><h3>Research Scout</h3><p>Looks up how the best open-source projects on GitHub solve the problem, with evidence, before anything is built.</p><span class="tag">advises</span></div>
+      <div class="agent"><div class="n">02</div><h3>Architect &amp; Red Team</h3><p>Turns the research into a design, then attacks its own design. Is this the best realistic option or just the first one?</p><span class="tag block">can block</span></div>
+      <div class="agent"><div class="n">03</div><h3>Developer</h3><p>Builds only the approved design, in small, tested steps. Tests first where it makes sense.</p><span class="tag">builds</span></div>
+      <div class="agent"><div class="n">04</div><h3>Data Auditor</h3><p>Checks raw detections and reference labels against the original video before anything is measured.</p><span class="tag block">can block</span></div>
+      <div class="agent"><div class="n">05</div><h3>Evaluator</h3><p>Measures with fixed rules and reports what the numbers show, and what they do not show.</p><span class="tag block">can block</span></div>
+      <div class="agent"><div class="n">06</div><h3>Reviewer &amp; Gatekeeper</h3><p>Makes the final call for each phase. After three failed fix rounds, the human (me) decides.</p><span class="tag block">final call</span></div>
+    </div>
+    <div class="flow" aria-label="Workflow"><span>Research</span><b>→</b><span>Design</span><b>→</b><span>Build</span><b>→</b><span>Audit data</span><b>→</b><span>Measure</span><b>→</b><span>Review</span><b>↺</b><span>max. 3 fix rounds</span></div>
+
+    <div class="who">
+      <div><h3>Codex · the builder</h3><p>OpenAI's coding agent wrote most of the code, ran the benchmarks and documented every result with a file as proof.</p></div>
+      <div><h3>Claude · the critic</h3><p>Anthropic's Claude did the research, wrote the plan and the work packages, labelled reference clips and counter-checked Codex's results.</p></div>
+      <div><h3>Me · the coach</h3><p>I set the goal and the rules, chose between options and decided when to change direction. The two agents talked through one shared handoff file with more than 20 dated entries.</p></div>
+    </div>
+  </section>
+
+  <section id="journey">
+    <div class="head">
+      <div><div class="bar"></div><h2 class="display">Six days, five turns</h2></div>
+      <p>The project did not go in a straight line. These were the moments that changed its direction.</p>
+    </div>
+    <ol class="timeline-v">
+      <li><time>21 Nov 2026</time><h3>Rules first</h3><p>Before any new code, the agents wrote down the rules that must never be broken: no player identity is ever set automatically, every number in the documentation needs a benchmark file as evidence, and no face recognition.</p></li>
+      <li><time>22 Nov 2026</time><h3>Tracking and a review screen</h3><p>Players were tracked over time, and a local review page let a human confirm or correct what the model proposed.</p></li>
+      <li><time>25 Nov 2026</time><h3>Chasing the ball</h3><p>The ball turned out to be the hard part. The team built custom filters, a possession state machine and pass detection, and tested two specialised alternatives.</p></li>
+      <li><time>25 Nov 2026</time><h3>The pivot: fully automatic</h3><p>Human review of every event was too slow for a course project. I decided to switch to fully automatic analysis, with every number clearly labelled as automatic and shown together with its measured accuracy. A YouTube import followed the same day.</p></li>
+      <li><time>26 Nov 2026</time><h3>Five minutes, audited</h3><p>Codex produced the five-minute annotated video. The Data Auditor checked every input file, inspected 50 ball detections by eye and blocked any claim of "measured accuracy" until a human confirms the reference.</p></li>
+    </ol>
+  </section>
+
+  <section id="problems">
+    <div class="head">
+      <div><div class="bar"></div><h2 class="display">Problems the agents caught</h2></div>
+      <p>The worst errors were not in the code. They were in the data. That is why the Data Auditor joined the team halfway through.</p>
+    </div>
+    <div class="pair" style="margin-bottom:24px">
+      <figure><img src="img/before-logo.jpg" alt="Before: the camera logo in the corner was detected as the ball" loading="lazy"><figcaption><b>Before:</b> a standard model kept finding the "ball" in the camera logo.</figcaption></figure>
+      <figure><img src="img/after-filter.jpg" alt="After: the real ball in midfield is marked" loading="lazy"><figcaption><b>After:</b> with a logo mask and static-object filters, the real ball is found.</figcaption></figure>
+    </div>
+    <div class="problems">
+      <div class="problem"><div class="bad"><h3>Problem</h3><p>Most "balls" found by the first model were the Veo logo in the corner of the picture.</p></div><div class="good"><h3>Fix</h3><p>A mask for the logo area, so nothing there can count as the ball.</p></div></div>
+      <div class="problem"><div class="bad"><h3>Problem</h3><p>A bottle at the touchline and an object on a wall looked like a ball that never moved.</p></div><div class="good"><h3>Fix</h3><p>Filters that drop "balls" that stay in place while the camera pans, or rest on the pitch with no player near.</p></div></div>
+      <div class="problem"><div class="bad"><h3>Problem</h3><p>White shirts in backlight were counted as the red team, giving one team 100% possession.</p></div><div class="good"><h3>Fix</h3><p>Team colours are learned per video with k-means clustering instead of fixed colour rules.</p></div></div>
+      <div class="problem"><div class="bad"><h3>Problem</h3><p>The referee was sometimes counted as a player of the red team.</p></div><div class="good"><h3>Fix</h3><p>Referee kits are recognised and kept out of the team clustering, checked on sample frames.</p></div></div>
+    </div>
+  </section>
+
+  <section id="results">
+    <div class="head">
+      <div><div class="bar"></div><h2 class="display">What worked, what didn't</h2></div>
+      <p>An honest scorecard. The project is a working prototype, not a finished product.</p>
+    </div>
+    <div class="verdict">
+      <div>
+        <h3>Achieved</h3>
+        <ul>
+          <li>A fully automatic five-minute analysis of a real amateur match, as an annotated video.</li>
+          <li>On average 16.6 people detected per analysed frame, and the two teams separated by shirt colour.</li>
+          <li>The most confident ball detections are reliable: 30 of 30 checked samples were correct.</li>
+          <li>A local app that also takes a YouTube link and returns video plus numbers.</li>
+          <li>A repeatable way of working with agents, where every number has a file as evidence.</li>
+        </ul>
+      </div>
+      <div class="miss">
+        <h3>Not there yet</h3>
+        <ul>
+          <li>The ball is found in only 51% of frames. It is tiny and often hidden behind players.</li>
+          <li>Possession could be assigned to a team in only 36 of 300 seconds.</li>
+          <li>Passes: 3 of 7 found in the practice clips, 0 of 2 in a clip held back for testing.</li>
+          <li>A specialised ball model (WASB) found a ball in just 9 of 250 frames, mostly reflections on parked cars.</li>
+          <li>Doubling the image resolution to 1280 px took 2.4 times longer and found no more balls (116 vs 118 frames).</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">The pass reference was drafted with AI help. Until a human confirms it, the pass numbers are a diagnostic, not a final accuracy.</p>
+  </section>
+
+  <section id="lessons">
+    <div class="head">
+      <div><div class="bar"></div><h2 class="display">What I learned</h2></div>
+      <p>The biggest lessons were about working with AI, not about football.</p>
+    </div>
+    <ol class="lessons">
+      <li><div><b>Data beats models</b><span>A bigger model did not help. Looking at the actual frames and fixing the input did.</span></div></li>
+      <li><div><b>Agents need roles that can say no</b><span>A single agent tends to agree with itself. A red team, a data auditor and a gatekeeper caught mistakes that would have looked fine in a demo.</span></div></li>
+      <li><div><b>Keep a test the system has never seen</b><span>On the clips used for tuning, passes looked promising. On the held-back clip, the result was 0 of 2. Without it I would have fooled myself.</span></div></li>
+      <li><div><b>Write things down</b><span>A shared handoff file and small work packages let two different AI agents work on the same project without losing track.</span></div></li>
+      <li><div><b>Honest numbers are part of the product</b><span>Every figure on this site comes from a result file, and the weak ones are shown too.</span></div></li>
+    </ol>
+  </section>
+
+  <section id="next">
+    <div class="head">
+      <div><div class="bar"></div><h2 class="display">What's next</h2></div>
+      <p>Three steps would make the biggest difference.</p>
+    </div>
+    <ol class="steps">
+      <li><b>Human-checked reference</b><span>Confirm the pass reference by hand, so accuracy can be measured for real.</span></li>
+      <li><b>A ball model for this camera</b><span>Train on our own Veo footage instead of stadium broadcasts.</span></li>
+      <li><b>Per-player stats</b><span>Connect automatic pass proposals to the review screen, so confirmed passes count for each player.</span></li>
+    </ol>
+  </section>
+</main>
+
+<div class="band">
+  <div class="wrap">
+    <p>See it run on your own video.</p>
+    <a class="btn" href="try.html">Try it now</a>
+  </div>
+</div>
+
+<footer><div class="wrap"><span>FussballVision · AI Applications course project · 2026 · Stadium background image is AI-generated.</span><span>Players are anonymous. No names, no face recognition. <a href="index.html">Home</a></span></div></footer>
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Try FussballVision</title>
+<meta name="description" content="Run a light version of FussballVision on your own football video, directly in your browser. Your video never leaves your device.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .lab { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 0; border: 1px solid var(--line); background: var(--bg-2); margin-top: 40px; }
+  .stage { position: relative; background: #000; aspect-ratio: 16 / 9; display: grid; place-items: center; }
+  .stage video, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .stage canvas { pointer-events: none; }
+  .drop { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; border: 2px dashed var(--line-2); margin: 16px; z-index: 2; }
+  .drop[hidden], video[hidden] { display: none; }
+  .drop.over { border-color: var(--accent); background: rgba(255,210,63,.06); }
+  .drop p { margin: 8px 0 0; color: var(--muted); font-size: .95rem; }
+  .drop strong { font-weight: 800; font-stretch: 80%; text-transform: uppercase; font-size: clamp(1.4rem, 3vw, 2rem); display: block; }
+  .side { border-left: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+  .side h3 { margin: 0; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .kpis div { background: var(--panel); padding: 14px; }
+  .kpis b { display: block; font-weight: 800; font-stretch: 72%; font-size: 2rem; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .kpis span { color: var(--muted); font-size: .8rem; }
+  .teams { display: grid; gap: 10px; }
+  .team { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center; font-size: .95rem; }
+  .team i { width: 22px; height: 22px; border: 1px solid var(--line-2); background: #333; }
+  .team b { font-variant-numeric: tabular-nums; }
+  .poss { display: flex; height: 22px; border: 1px solid var(--line); background: #1a222b; }
+  .poss i { transition: width .3s; }
+  .status { font-size: .9rem; color: var(--muted); min-height: 1.6em; }
+  .status.busy::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-right: 8px; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .2; } }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; }
+  .controls .btn { padding: 11px 16px; font-size: .85rem; }
+  select { background: var(--panel); color: var(--ink); border: 1px solid var(--line-2); padding: 10px; font: inherit; font-size: .9rem; width: 100%; }
+  label.field { display: grid; gap: 6px; font-size: .85rem; color: var(--muted); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  @media (max-width: 860px) { .lab { grid-template-columns: 1fr; } .side { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="#ffd23f" stroke-width="3"/><path d="M16 9l6 4.5-2.3 7h-7.4L10 13.5z" fill="#ffd23f"/></svg>FUSSBALLVISION</a>
+    <nav aria-label="Main"><a href="index.html">Home</a><a href="index.html#demo">Demo</a><a href="story.html">The story</a><a class="cta" href="try.html" aria-current="page">Try it</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section style="padding-top:72px">
+    <div class="head" style="margin-bottom:0">
+      <div><p class="eyebrow">Live in your browser</p><h1 class="display" style="font-size:clamp(2.6rem,7vw,5.4rem)">Try it with your own match</h1></div>
+      <p>Pick a football video from your device. A light version of FussballVision detects players and the ball, learns the two shirt colours and estimates possession, frame by frame. <strong style="color:var(--ink)">Your video never leaves your device.</strong></p>
+    </div>
+
+    <div class="lab">
+      <div class="stage" id="stage">
+        <video id="video" playsinline muted hidden></video>
+        <canvas id="overlay" aria-hidden="true"></canvas>
+        <label class="drop" id="drop">
+          <span><strong>Drop a video here</strong><p>or click to choose an MP4, MOV or WEBM file · wide shots from the side of the pitch work best</p></span>
+          <input class="sr" type="file" id="file" accept="video/*">
+        </label>
+      </div>
+      <aside class="side" aria-live="polite">
+        <div>
+          <h3>Status</h3>
+          <p class="status" id="status">Waiting for a video.</p>
+        </div>
+        <label class="field">Model
+          <select id="model">
+            <option value="lite_mobilenet_v2">Fast (Lite MobileNet v2)</option>
+            <option value="mobilenet_v2">More accurate (MobileNet v2)</option>
+          </select>
+        </label>
+        <div class="kpis">
+          <div><b id="k-players">–</b><span>players per frame</span></div>
+          <div><b id="k-ball">–</b><span>frames with ball</span></div>
+          <div><b id="k-frames">0</b><span>frames analysed</span></div>
+          <div><b id="k-pos">–</b><span>position in the video</span></div>
+        </div>
+        <div>
+          <h3 style="margin-bottom:10px">Teams (learned from shirt colours)</h3>
+          <div class="teams">
+            <div class="team"><i id="sw-a" style="outline:3px solid #ff5a4e;outline-offset:2px"></i><span>Team A <small class="muted">(darker kit)</small></span><b id="p-a">–</b></div>
+            <div class="team"><i id="sw-b" style="outline:3px solid #4fc3ff;outline-offset:2px"></i><span>Team B <small class="muted">(lighter kit)</small></span><b id="p-b">–</b></div>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin-bottom:10px">Possession estimate</h3>
+          <div class="poss"><i id="bar-a" style="width:0;background:#ff5a4e"></i><i id="bar-b" style="width:0;background:#4fc3ff"></i></div>
+        </div>
+        <div class="controls">
+          <button class="btn primary" type="button" id="toggle" disabled>Pause</button>
+          <button class="btn" type="button" id="reset" disabled>New video</button>
+        </div>
+      </aside>
+    </div>
+    <p class="caption">Coral boxes are Team A, blue boxes Team B; the swatches show the kit colour each team was learned from. Grey means the colour matched neither team (often referees or spectators). The yellow ring is the ball. Possession goes to the team of the player closest to the ball.</p>
+  </section>
+
+  <section>
+    <div class="head">
+      <div><div class="bar"></div><h2 class="display">Light version vs. full pipeline</h2></div>
+      <p>The browser demo uses COCO-SSD, the small TensorFlow.js model from the course. The full pipeline runs locally on a laptop and is much stronger at finding the small ball.</p>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th></th><th>This page</th><th>Full FussballVision</th></tr></thead>
+      <tbody>
+        <tr><td>Detector</td><td>COCO-SSD (TensorFlow.js)</td><td>YOLO26s at 960 px with tiled ball search</td></tr>
+        <tr><td>Ball filters</td><td>none</td><td>camera logo mask, static-object filters</td></tr>
+        <tr><td>Teams</td><td>k-means on shirt colour, live</td><td>k-means on shirt colour per clip, referee excluded</td></tr>
+        <tr><td>Events</td><td>closest player to the ball</td><td>possession state machine, passes, turnovers</td></tr>
+        <tr><td>Where it runs</td><td>your browser</td><td>your laptop (Python)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Expect the ball to be missed often in wide shots: it is only a few pixels large. That is exactly the hard problem this project worked on. <a href="story.html">Read the story.</a></p>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>FussballVision · AI Applications course project · 2026</span><span>Runs locally in your browser. Nothing is uploaded.</span></div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2"></script>
+<script>
+const $ = id => document.getElementById(id);
+const video = $('video'), overlay = $('overlay'), ctx = overlay.getContext('2d');
+const sampler = document.createElement('canvas'), sctx = sampler.getContext('2d', { willReadFrequently: true });
+const status = (text, busy = false) => { $('status').textContent = text; $('status').classList.toggle('busy', busy); };
+
+let model = null, modelName = null, busy = false;
+let stats, samples, centres;
+function resetStats() {
+  stats = { frames: 0, people: 0, ballFrames: 0, possA: 0, possB: 0 };
+  samples = []; centres = null;
+  for (const id of ['k-players', 'k-ball', 'k-pos', 'p-a', 'p-b']) $(id).textContent = '–';
+  $('k-frames').textContent = '0';
+  $('bar-a').style.width = $('bar-b').style.width = '0';
+  $('sw-a').style.background = $('sw-b').style.background = '#333';
+}
+resetStats();
+
+async function ensureModel() {
+  const wanted = $('model').value;
+  if (model && modelName === wanted) return;
+  status('Loading the detection model (first time takes a few seconds)…', true);
+  model = await cocoSsd.load({ base: wanted });
+  modelName = wanted;
+}
+
+// The video is stepped frame by frame and paused while the model runs, so boxes always match the picture.
+const STEP = 0.2;
+let stepping = false, runId = 0;
+const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+const seek = t => new Promise(resolve => {
+  if (Math.abs(video.currentTime - t) < 1e-3 && video.readyState >= 2) return resolve();
+  video.addEventListener('seeked', resolve, { once: true });
+  video.currentTime = t;
+});
+
+async function run() {
+  const id = ++runId;
+  stepping = true;
+  $('toggle').textContent = 'Pause';
+  status('Analysing frame by frame…', true);
+  while (stepping && id === runId) {
+    await analyse();
+    $('k-pos').textContent = fmt(video.currentTime);
+    const next = video.currentTime + STEP;
+    if (next >= video.duration) {
+      stepping = false;
+      $('toggle').textContent = 'Restart';
+      status(`Done: ${stats.frames} frames analysed. Choose “New video” to try another clip.`);
+      return;
+    }
+    await seek(next);
+  }
+}
+
+async function openFile(file) {
+  if (!file || !file.type.startsWith('video/')) { status('That is not a video file. Please choose an MP4, MOV or WEBM.'); return; }
+  runId++; stepping = false;
+  resetStats();
+  video.src = URL.createObjectURL(file);
+  video.hidden = false;
+  $('drop').hidden = true;
+  $('reset').disabled = false;
+  try {
+    await ensureModel();
+    await new Promise((resolve, reject) => {
+      if (video.readyState >= 2) return resolve();
+      video.addEventListener('loadeddata', resolve, { once: true });
+      video.addEventListener('error', reject, { once: true });
+    });
+  } catch (err) {
+    status(model ? 'This video format cannot be played by your browser. Try an MP4 (H.264).' : 'The model could not be loaded. Check your internet connection and reload the page.');
+    return;
+  }
+  $('toggle').disabled = false;
+  run();
+}
+
+$('file').addEventListener('change', e => openFile(e.target.files[0]));
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => openFile(e.dataTransfer.files[0]));
+$('toggle').addEventListener('click', async () => {
+  if (stepping) { stepping = false; $('toggle').textContent = 'Resume'; status('Paused.'); return; }
+  if ($('toggle').textContent === 'Restart') { resetStats(); await seek(0); }
+  run();
+});
+$('reset').addEventListener('click', () => {
+  runId++; stepping = false;
+  URL.revokeObjectURL(video.src); video.removeAttribute('src'); video.load();
+  video.hidden = true; $('drop').hidden = false; $('file').value = '';
+  $('reset').disabled = $('toggle').disabled = true; $('toggle').textContent = 'Pause';
+  ctx.clearRect(0, 0, overlay.width, overlay.height); resetStats(); status('Waiting for a video.');
+});
+$('model').addEventListener('change', async () => {
+  const wasRunning = stepping; stepping = false;
+  await ensureModel();
+  if (video.getAttribute('src') && wasRunning) run(); else status('Model ready.');
+});
+
+// Mean shirt colour of the upper body, ignoring grass-green pixels.
+function shirtColour(img, w, box, scale) {
+  const [bx, by, bw, bh] = box.map(v => v * scale);
+  const x1 = Math.max(0, Math.floor(bx + .25 * bw)), x2 = Math.min(w - 1, Math.ceil(bx + .75 * bw));
+  const y1 = Math.max(0, Math.floor(by + .15 * bh)), y2 = Math.min(img.height - 1, Math.ceil(by + .5 * bh));
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let y = y1; y <= y2; y++) for (let x = x1; x <= x2; x++) {
+    const i = (y * w + x) * 4, R = img.data[i], G = img.data[i + 1], B = img.data[i + 2];
+    if (G >= R && G >= B && G - Math.min(R, B) > 8) continue; // grass, also in shadow
+    if (R + G + B < 45) continue; // black shadow pixels carry no colour
+    r += R; g += G; b += B; n++;
+  }
+  return n >= 6 ? [r / n, g / n, b / n] : null;
+}
+// Fixed high-contrast marker colours; the learned kit colours are shown as swatches next to them.
+const TEAM_COLOURS = ['#ff5a4e', '#4fc3ff'];
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+const light = c => .299 * c[0] + .587 * c[1] + .114 * c[2];
+
+// Two-colour k-means, started from the two most different samples; ordered dark → light so teams keep their names.
+function cluster() {
+  const pts = samples;
+  let a = pts[0], b = pts[0], best = -1;
+  for (let i = 0; i < pts.length; i += 3) for (let j = i + 1; j < pts.length; j += 3) {
+    const d = dist(pts[i], pts[j]); if (d > best) { best = d; a = pts[i]; b = pts[j]; }
+  }
+  let c = [a.slice(), b.slice()];
+  for (let it = 0; it < 12; it++) {
+    const sum = [[0, 0, 0, 0], [0, 0, 0, 0]];
+    for (const p of pts) { const k = dist(p, c[0]) <= dist(p, c[1]) ? 0 : 1; sum[k][0] += p[0]; sum[k][1] += p[1]; sum[k][2] += p[2]; sum[k][3]++; }
+    c = c.map((old, k) => sum[k][3] ? [sum[k][0] / sum[k][3], sum[k][1] / sum[k][3], sum[k][2] / sum[k][3]] : old);
+  }
+  c.sort((x, y) => light(x) - light(y));
+  centres = c;
+  const css = v => `rgb(${v.map(Math.round).join(',')})`;
+  $('sw-a').style.background = css(c[0]); $('sw-b').style.background = css(c[1]);
+}
+
+function teamOf(colour) {
+  if (!centres || !colour) return -1;
+  const d0 = dist(colour, centres[0]), d1 = dist(colour, centres[1]);
+  const k = d0 <= d1 ? 0 : 1;
+  return Math.min(d0, d1) < Math.max(70, .6 * dist(centres[0], centres[1])) ? k : -1;
+}
+
+// COCO-SSD shrinks its input to 300 px, so distant players in a wide shot vanish.
+// Three near-square tiles over the pitch band plus one full-frame pass keep them visible.
+const tile = document.createElement('canvas'), tctx = tile.getContext('2d');
+const iou = (a, b) => {
+  const x1 = Math.max(a[0], b[0]), y1 = Math.max(a[1], b[1]);
+  const x2 = Math.min(a[0] + a[2], b[0] + b[2]), y2 = Math.min(a[1] + a[3], b[1] + b[3]);
+  const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  return inter / (a[2] * a[3] + b[2] * b[3] - inter || 1);
+};
+async function detectTiled(vw, vh) {
+  const all = (await model.detect(video, 60, .3)).filter(p => p.class === 'person' || p.class === 'sports ball');
+  const y0 = Math.round(.22 * vh), th = Math.round(.62 * vh), tw = Math.round(vw / 3), overlap = Math.round(.08 * vw);
+  const scale = Math.min(1, 640 / th);
+  for (let i = 0; i < 3; i++) {
+    const x0 = Math.max(0, Math.min(vw - tw - overlap, i * tw - overlap / 2));
+    const w = Math.min(vw - x0, tw + overlap);
+    tile.width = Math.round(w * scale); tile.height = Math.round(th * scale);
+    tctx.drawImage(video, x0, y0, w, th, 0, 0, tile.width, tile.height);
+    for (const p of await model.detect(tile, 60, .3)) {
+      if (p.class !== 'person' && p.class !== 'sports ball') continue;
+      const [x, y, bw, bh] = p.bbox;
+      all.push({ ...p, bbox: [x / scale + x0, y / scale + y0, bw / scale, bh / scale] });
+    }
+  }
+  all.sort((a, b) => b.score - a.score);
+  const kept = [];
+  for (const p of all) if (!kept.some(k => k.class === p.class && (iou(k.bbox, p.bbox) > .4))) kept.push(p);
+  return kept;
+}
+
+async function analyse() {
+  busy = true;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (overlay.width !== vw) { overlay.width = vw; overlay.height = vh; }
+  const scale = Math.min(1, 1280 / vw);
+  sampler.width = Math.round(vw * scale); sampler.height = Math.round(vh * scale);
+  sctx.drawImage(video, 0, 0, sampler.width, sampler.height);
+  const preds = await detectTiled(vw, vh);
+  const img = sctx.getImageData(0, 0, sampler.width, sampler.height);
+
+  const people = preds.filter(p => p.class === 'person');
+  const ball = preds.filter(p => p.class === 'sports ball').sort((a, b) => b.score - a.score)[0];
+  const coloured = people.map(p => ({ box: p.bbox, colour: shirtColour(img, sampler.width, p.bbox, scale) }));
+  for (const p of coloured) if (p.colour) { samples.push(p.colour); if (samples.length > 450) samples.shift(); }
+  if (samples.length >= 30 && (stats.frames % 15 === 0 || !centres)) cluster();
+
+  ctx.clearRect(0, 0, vw, vh);
+  const lw = Math.max(2, vw / 400);
+  ctx.lineWidth = lw;
+  for (const p of coloured) {
+    p.team = teamOf(p.colour);
+    ctx.strokeStyle = p.team >= 0 ? TEAM_COLOURS[p.team] : 'rgba(150,160,170,.75)';
+    const [x, y, w, h] = p.box;
+    ctx.strokeRect(x, y, w, h);
+  }
+
+  const dt = STEP;
+  if (ball) {
+    const [x, y, w, h] = ball.bbox, cx = x + w / 2, cy = y + h / 2;
+    ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = lw * 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, Math.max(w, h) / 2 + 6 * lw, 0, Math.PI * 2); ctx.stroke();
+    stats.ballFrames++;
+    let owner = null, best = Infinity;
+    for (const p of coloured) {
+      const [px, py, pw, ph] = p.box, d = Math.hypot(px + pw / 2 - cx, py + ph - cy);
+      if (d < best && d < .8 * ph) { best = d; owner = p; }
+    }
+    if (owner && owner.team === 0) stats.possA += dt;
+    if (owner && owner.team === 1) stats.possB += dt;
+  }
+
+  stats.frames++; stats.people += people.length;
+  $('k-frames').textContent = stats.frames;
+  $('k-players').textContent = (stats.people / stats.frames).toFixed(1);
+  $('k-ball').textContent = `${Math.round(100 * stats.ballFrames / stats.frames)}%`;
+  const total = stats.possA + stats.possB;
+  if (total > 0) {
+    const a = Math.round(100 * stats.possA / total);
+    $('p-a').textContent = `${a}%`; $('p-b').textContent = `${100 - a}%`;
+    $('bar-a').style.width = `${a}%`; $('bar-b').style.width = `${100 - a}%`;
+  }
+  busy = false;
+}
+
+</script>
+</body>
+</html>
