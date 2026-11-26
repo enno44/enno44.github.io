@@ -1,2 +1,0 @@
-Final project 6.9: FussballVision - automatic football video analysis from one camera (player tracking, teams, ball, possession, passes), built with a team of AI agents; try it in your browser
-https://enno44.github.io/fussballvision/
